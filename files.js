@@ -1,7 +1,8 @@
 modelFiles = {
     src: [
-        'src/directive.js',
-        'src/model.js'
+        'src/global.js',
+        'src/model.js',
+        'src/directive.js'
     ],
     test: [
         'test/*Spec.js'
