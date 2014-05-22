@@ -1,0 +1,18 @@
+{
+    "name": "angular-cordova-file",
+    "version": "1.0.0",
+    "description": "Cordova files integration into AngularJS",
+    "keywords": [
+        "angular",
+        "cordova",
+        "file",
+        "preview",
+        "upload"
+    ],
+    "main": "release/angular-cordova-file.min.js",
+    "scripts": [
+        "release/angular-cordova-file.min.js"
+    ],
+    "license": "MIT",
+    "repo": "sroze/angular-cordova-file"
+}
