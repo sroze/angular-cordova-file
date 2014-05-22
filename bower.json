@@ -1,6 +1,6 @@
 {
     "name": "angular-cordova-file",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "main": "./release/angular-cordova-file.js",
     "dependencies": {
         "angular": ">= 1.0.8",
