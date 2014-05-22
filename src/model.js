@@ -1,5 +1,3 @@
-'use strict';
-
 angular.module('angular-cordova-file')
     .factory('CordovaFile', function ($q, $upload, Model) {
         var CordovaFile = Model.extend({
@@ -14,7 +12,7 @@ angular.module('angular-cordova-file')
                 if (this.has('dataUrl')) {
                     deferred.resolve(this.get('dataUrl'));
                 } else if (this.has('uri')) {
-                    if (window.resolveLocalFileSystemURL != undefined) {
+                    if (window.resolveLocalFileSystemURL !== undefined) {
                         window.resolveLocalFileSystemURL(this.get('uri'), function (fileEntry) {
                             deferred.resolve(fileEntry.toURL());
                         });

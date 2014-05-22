@@ -1,5 +1,3 @@
-'use strict';
-
 angular.module('angular-cordova-file')
     .directive('cordovaFile', function ($modal, $timeout, $parse, CordovaFile) {
         /**
@@ -48,7 +46,7 @@ angular.module('angular-cordova-file')
 
         return {
             link: function (scope, element, attributes) {
-                var fn = $parse(attributes['cordovaFile']);
+                var fn = $parse(attributes.cordovaFile);
 
                 element.on('change', function (e) {
                     if (typeof Camera == "undefined") {
