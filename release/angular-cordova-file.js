@@ -1,6 +1,6 @@
 /**
  * Cordova files integration into AngularJS
- * @version v1.0.1
+ * @version v1.0.2
  * @link http://github.com/sroze/angular-cordova-file
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -105,7 +105,9 @@ angular.module('angular-cordova-file')
                         uri,
                         encodeURI(options.url),
                         function (result) {
-                            deferred.resolve(result);
+                            // Deserialize json response
+                            var response = angular.fromJson(result.response);
+                            deferred.resolve(response);
                         },
                         function (error) {
                             deferred.reject(error);
