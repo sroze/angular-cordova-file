@@ -89,7 +89,9 @@ angular.module('angular-cordova-file')
                         uri,
                         encodeURI(options.url),
                         function (result) {
-                            deferred.resolve(result);
+                            // Deserialize json response
+                            var response = angular.fromJson(result.response);
+                            deferred.resolve(response);
                         },
                         function (error) {
                             deferred.reject(error);
