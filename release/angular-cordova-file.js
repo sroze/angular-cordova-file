@@ -1,6 +1,6 @@
 /**
  * Cordova files integration into AngularJS
- * @version v1.0.2
+ * @version v1.1.0
  * @link http://github.com/sroze/angular-cordova-file
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -12,7 +12,7 @@ if (typeof module !== "undefined" && typeof exports !== "undefined" && module.ex
 
 (function (window, angular, undefined) {
 angular.module('angular-cordova-file', [
-    'angular-simple-model', 'ui.bootstrap.modal', 'angularFileUpload'
+    'angular-simple-model', 'angularFileUpload'
 ]);
 angular.module('angular-cordova-file')
     .factory('CordovaFile', function ($q, $upload, Model) {
@@ -137,35 +137,58 @@ angular.module('angular-cordova-file')
         return CordovaFile;
     });
 angular.module('angular-cordova-file')
-    .directive('cordovaFile', function ($modal, $timeout, $parse, CordovaFile) {
+    .directive('cordovaFile', function ($injector, $q, $timeout, $parse, CordovaFile) {
+        var sourcesMapping = typeof Camera != "undefined" ? {
+            camera: Camera.PictureSourceType.CAMERA,
+            photoLibrary: Camera.PictureSourceType.PHOTOLIBRARY
+        } : {};
+
+        /**
+         * Request picture from specified source.
+         *
+         * @param sourceType
+         * @returns promise
+         */
+        function requestPictureFromSource (sourceType, options) {
+            var deferred = $q.defer();
+
+            navigator.camera.getPicture(function (fileUri) {
+                if (fileUri.indexOf("://") == -1) {
+                    fileUri = 'file://'+fileUri;
+                } else if (fileUri.substr(0, 10) == 'content://') {
+                    // Currently not supported by Android because of a bug
+                    // @see https://issues.apache.org/jira/browse/CB-5398
+                    return deferred.reject('Image provider not supported');
+                }
+
+                var file = CordovaFile.fromUri(fileUri);
+                file.set('contentType', 'image/png');
+
+                deferred.resolve([file]);
+            }, function (reason) {
+                deferred.reject(reason);
+            }, angular.extend({
+                quality: 100,
+                sourceType: sourceType,
+                destinationType: Camera.DestinationType.FILE_URI,
+                encodingType: Camera.EncodingType.PNG,
+                correctOrientation: true
+            }, options));
+
+            return deferred.promise;
+        }
+
         /**
          * Modal controller of input.
          *
          */
-        function fileInputController ($scope, $modalInstance)
+        function fileInputController ($scope, $modalInstance, options)
         {
             function getPictureFromSource (sourceType) {
-                navigator.camera.getPicture(function (fileUri) {
-                    if (fileUri.indexOf("://") == -1) {
-                        fileUri = 'file://'+fileUri;
-                    } else if (fileUri.substr(0, 10) == 'content://') {
-                        // Currently not supported by Android because of a bug
-                        // @see https://issues.apache.org/jira/browse/CB-5398
-                        return $modalInstance.dismiss('Image provider not supported');
-                    }
-
-                    var file = CordovaFile.fromUri(fileUri);
-                    file.set('contentType', 'image/png');
-
-                    $modalInstance.close([file]);
-                }, function (message) {
-                    $modalInstance.dismiss(message);
-                }, {
-                    quality: 100,
-                    sourceType: sourceType,
-                    destinationType: Camera.DestinationType.FILE_URI,
-                    encodingType: Camera.EncodingType.PNG,
-                    correctOrientation: true
+                requestPictureFromSource(sourceType, options).then(function(files) {
+                    $modalInstance.close(files);
+                }, function (reason) {
+                    $modalInstance.dismiss(reason);
                 });
             }
 
@@ -184,7 +207,21 @@ angular.module('angular-cordova-file')
 
         return {
             link: function (scope, element, attributes) {
-                var fn = $parse(attributes.cordovaFile);
+                var fn = $parse(attributes.cordovaFile),
+                    options = {},
+                    source;
+
+                if (attributes.options) {
+                    scope.$watch(attributes.options, function (value) {
+                        options = value || options;
+                    });
+                }
+
+                if (attributes.source) {
+                    scope.$watch(attributes.source, function (value) {
+                        source = value;
+                    });
+                }
 
                 element.on('change', function (e) {
                     if (typeof Camera == "undefined") {
@@ -209,25 +246,50 @@ angular.module('angular-cordova-file')
                     if (typeof Camera != "undefined") {
                         event.preventDefault();
 
-                        var modalInstance = $modal.open({
-                            templateUrl: 'template/cordova-file/choice.html',
-                            controller: fileInputController
-                        });
+                        if (source !== undefined) {
+                            if (!(source in sourcesMapping)) {
+                                throw new Error(source+' data source not found');
+                            }
 
-                        modalInstance.result.then(function (files) {
-                            $timeout(function() {
-                                fn(scope, {
-                                    $files : files,
-                                    $event : {}
+                            requestPictureFromSource(sourcesMapping[source], options).then(function (files) {
+                                $timeout(function() {
+                                    fn(scope, {
+                                        $files : files,
+                                        $event : {}
+                                    });
                                 });
+                            }, function (reason) {
+                                alert(reason);
                             });
-                        }, function (reason) {
-                            alert(reason);
-                        });
+                        } else if ($injector.has('$modal')) {
+                            var modalInstance = $injector.get('$modal').open({
+                                templateUrl: 'template/cordova-file/choice.html',
+                                controller: fileInputController,
+                                resolve: {
+                                    options: function () {
+                                        return options;
+                                    }
+                                }
+                            });
 
-                        scope.$on('$destroy', function () {
-                            modalInstance.dismiss('Scope destroyed');
-                        });
+                            modalInstance.result.then(function (files) {
+                                $timeout(function() {
+                                    fn(scope, {
+                                        $files : files,
+                                        $event : {}
+                                    });
+                                });
+                            }, function (reason) {
+                                alert(reason);
+                            });
+
+                            scope.$on('$destroy', function () {
+                                modalInstance.dismiss('Scope destroyed');
+                            });
+                        } else {
+                            throw new Error('If no `data-source` attribute is specified, `$modal` must be available' +
+                                ' (see `angular-ui-bootstrap` or another implementation)');
+                        }
                     }
                 });
             }
