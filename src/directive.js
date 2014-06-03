@@ -121,7 +121,8 @@ angular.module('angular-cordova-file')
                                     });
                                 });
                             }, function (reason) {
-                                alert(reason);
+                                console.log('Unable to request picture');
+                                console.log(reason);
                             });
                         } else if ($injector.has('$modal')) {
                             var modalInstance = $injector.get('$modal').open({
@@ -142,7 +143,7 @@ angular.module('angular-cordova-file')
                                     });
                                 });
                             }, function (reason) {
-                                alert(reason);
+                                console.log(reason);
                             });
 
                             scope.$on('$destroy', function () {
