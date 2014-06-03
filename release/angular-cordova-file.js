@@ -1,6 +1,6 @@
 /**
  * Cordova files integration into AngularJS
- * @version v1.1.0
+ * @version v1.1.1
  * @link http://github.com/sroze/angular-cordova-file
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -259,7 +259,8 @@ angular.module('angular-cordova-file')
                                     });
                                 });
                             }, function (reason) {
-                                alert(reason);
+                                console.log('Unable to request picture');
+                                console.log(reason);
                             });
                         } else if ($injector.has('$modal')) {
                             var modalInstance = $injector.get('$modal').open({
@@ -280,7 +281,7 @@ angular.module('angular-cordova-file')
                                     });
                                 });
                             }, function (reason) {
-                                alert(reason);
+                                console.log(reason);
                             });
 
                             scope.$on('$destroy', function () {
