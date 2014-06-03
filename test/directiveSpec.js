@@ -67,6 +67,23 @@ describe("cordovaFile directive", function () {
             expect(modalMock.open).not.toHaveBeenCalled();
             expect(navigatorMock.camera.getPicture).toHaveBeenCalled();
         });
+
+        it("must be possible to override camera options", function () {
+            scope.options = {
+                quality: 50,
+                foo: 'bar'
+            };
+
+            compileDirective('<input type="file" cordova-file="onFiles($files)" data-source="camera" data-options="options" />');
+            elm.triggerHandler('click');
+
+            expect(navigatorMock.camera.getPicture).toHaveBeenCalledWith(jasmine.any(Function), jasmine.any(Function), jasmine.any(Object));
+
+            var mrCall = navigatorMock.camera.getPicture.mostRecentCall;
+            expect(mrCall.args[2].quality).toEqual(50);
+            expect(mrCall.args[2].foo).toEqual('bar');
+            expect(mrCall.args[2].correctOrientation).toBeTruthy();
+        });
     });
 
     describe("with a web environment", function () {

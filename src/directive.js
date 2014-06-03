@@ -11,7 +11,7 @@ angular.module('angular-cordova-file')
          * @param sourceType
          * @returns promise
          */
-        function requestPictureFromSource (sourceType) {
+        function requestPictureFromSource (sourceType, options) {
             var deferred = $q.defer();
 
             navigator.camera.getPicture(function (fileUri) {
@@ -29,13 +29,13 @@ angular.module('angular-cordova-file')
                 deferred.resolve([file]);
             }, function (reason) {
                 deferred.reject(reason);
-            }, {
+            }, angular.extend({
                 quality: 100,
                 sourceType: sourceType,
                 destinationType: Camera.DestinationType.FILE_URI,
                 encodingType: Camera.EncodingType.PNG,
                 correctOrientation: true
-            });
+            }, options));
 
             return deferred.promise;
         }
@@ -44,10 +44,10 @@ angular.module('angular-cordova-file')
          * Modal controller of input.
          *
          */
-        function fileInputController ($scope, $modalInstance)
+        function fileInputController ($scope, $modalInstance, options)
         {
             function getPictureFromSource (sourceType) {
-                requestPictureFromSource(sourceType).then(function(files) {
+                requestPictureFromSource(sourceType, options).then(function(files) {
                     $modalInstance.close(files);
                 }, function (reason) {
                     $modalInstance.dismiss(reason);
@@ -69,7 +69,14 @@ angular.module('angular-cordova-file')
 
         return {
             link: function (scope, element, attributes) {
-                var fn = $parse(attributes.cordovaFile);
+                var fn = $parse(attributes.cordovaFile),
+                    options = {};
+
+                if (attributes.options) {
+                    scope.$watch('options', function (value) {
+                        options = value || options;
+                    });
+                }
 
                 element.on('change', function (e) {
                     if (typeof Camera == "undefined") {
@@ -99,7 +106,7 @@ angular.module('angular-cordova-file')
                                 throw new Error(attributes.source+' data source not found');
                             }
 
-                            requestPictureFromSource(sourcesMapping[attributes.source]).then(function (files) {
+                            requestPictureFromSource(sourcesMapping[attributes.source], options).then(function (files) {
                                 $timeout(function() {
                                     fn(scope, {
                                         $files : files,
@@ -112,7 +119,12 @@ angular.module('angular-cordova-file')
                         } else if ($injector.has('$modal')) {
                             var modalInstance = $injector.get('$modal').open({
                                 templateUrl: 'template/cordova-file/choice.html',
-                                controller: fileInputController
+                                controller: fileInputController,
+                                resolve: {
+                                    options: function () {
+                                        return options;
+                                    }
+                                }
                             });
 
                             modalInstance.result.then(function (files) {

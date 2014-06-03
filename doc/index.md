@@ -15,6 +15,8 @@
 **Note:** you could use the `data-source` attribute to specify `camera` or `photoLibrary` to remove the 'ui.bootstrap.modal'
 dependency.
 
+**Note:** you can use `data-options` attribute to extend (or override) options passed to `navigator.camera.getPicture`.
+
 ### Controller
 
 ```
