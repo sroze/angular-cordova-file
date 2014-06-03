@@ -12,6 +12,9 @@
 </div>
 ```
 
+**Note:** you could use the `data-source` attribute to specify `camera` or `photoLibrary` to remove the 'ui.bootstrap.modal'
+dependency.
+
 ### Controller
 
 ```

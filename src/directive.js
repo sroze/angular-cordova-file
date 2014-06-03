@@ -1,5 +1,45 @@
 angular.module('angular-cordova-file')
-    .directive('cordovaFile', function ($modal, $timeout, $parse, CordovaFile) {
+    .directive('cordovaFile', function ($injector, $q, $timeout, $parse, CordovaFile) {
+        var sourcesMapping = typeof Camera != "undefined" ? {
+            camera: Camera.PictureSourceType.CAMERA,
+            photoLibrary: Camera.PictureSourceType.PHOTOLIBRARY
+        } : {};
+
+        /**
+         * Request picture from specified source.
+         *
+         * @param sourceType
+         * @returns promise
+         */
+        function requestPictureFromSource (sourceType) {
+            var deferred = $q.defer();
+
+            navigator.camera.getPicture(function (fileUri) {
+                if (fileUri.indexOf("://") == -1) {
+                    fileUri = 'file://'+fileUri;
+                } else if (fileUri.substr(0, 10) == 'content://') {
+                    // Currently not supported by Android because of a bug
+                    // @see https://issues.apache.org/jira/browse/CB-5398
+                    return deferred.reject('Image provider not supported');
+                }
+
+                var file = CordovaFile.fromUri(fileUri);
+                file.set('contentType', 'image/png');
+
+                deferred.resolve([file]);
+            }, function (reason) {
+                deferred.reject(reason);
+            }, {
+                quality: 100,
+                sourceType: sourceType,
+                destinationType: Camera.DestinationType.FILE_URI,
+                encodingType: Camera.EncodingType.PNG,
+                correctOrientation: true
+            });
+
+            return deferred.promise;
+        }
+
         /**
          * Modal controller of input.
          *
@@ -7,27 +47,10 @@ angular.module('angular-cordova-file')
         function fileInputController ($scope, $modalInstance)
         {
             function getPictureFromSource (sourceType) {
-                navigator.camera.getPicture(function (fileUri) {
-                    if (fileUri.indexOf("://") == -1) {
-                        fileUri = 'file://'+fileUri;
-                    } else if (fileUri.substr(0, 10) == 'content://') {
-                        // Currently not supported by Android because of a bug
-                        // @see https://issues.apache.org/jira/browse/CB-5398
-                        return $modalInstance.dismiss('Image provider not supported');
-                    }
-
-                    var file = CordovaFile.fromUri(fileUri);
-                    file.set('contentType', 'image/png');
-
-                    $modalInstance.close([file]);
-                }, function (message) {
-                    $modalInstance.dismiss(message);
-                }, {
-                    quality: 100,
-                    sourceType: sourceType,
-                    destinationType: Camera.DestinationType.FILE_URI,
-                    encodingType: Camera.EncodingType.PNG,
-                    correctOrientation: true
+                requestPictureFromSource(sourceType).then(function(files) {
+                    $modalInstance.close(files);
+                }, function (reason) {
+                    $modalInstance.dismiss(reason);
                 });
             }
 
@@ -71,25 +94,45 @@ angular.module('angular-cordova-file')
                     if (typeof Camera != "undefined") {
                         event.preventDefault();
 
-                        var modalInstance = $modal.open({
-                            templateUrl: 'template/cordova-file/choice.html',
-                            controller: fileInputController
-                        });
+                        if (attributes.source !== undefined) {
+                            if (!(attributes.source in sourcesMapping)) {
+                                throw new Error(attributes.source+' data source not found');
+                            }
 
-                        modalInstance.result.then(function (files) {
-                            $timeout(function() {
-                                fn(scope, {
-                                    $files : files,
-                                    $event : {}
+                            requestPictureFromSource(sourcesMapping[attributes.source]).then(function (files) {
+                                $timeout(function() {
+                                    fn(scope, {
+                                        $files : files,
+                                        $event : {}
+                                    });
                                 });
+                            }, function (reason) {
+                                alert(reason);
                             });
-                        }, function (reason) {
-                            alert(reason);
-                        });
+                        } else if ($injector.has('$modal')) {
+                            var modalInstance = $injector.get('$modal').open({
+                                templateUrl: 'template/cordova-file/choice.html',
+                                controller: fileInputController
+                            });
 
-                        scope.$on('$destroy', function () {
-                            modalInstance.dismiss('Scope destroyed');
-                        });
+                            modalInstance.result.then(function (files) {
+                                $timeout(function() {
+                                    fn(scope, {
+                                        $files : files,
+                                        $event : {}
+                                    });
+                                });
+                            }, function (reason) {
+                                alert(reason);
+                            });
+
+                            scope.$on('$destroy', function () {
+                                modalInstance.dismiss('Scope destroyed');
+                            });
+                        } else {
+                            throw new Error('If no `data-source` attribute is specified, `$modal` must be available' +
+                                ' (see `angular-ui-bootstrap` or another implementation)');
+                        }
                     }
                 });
             }

@@ -1,11 +1,19 @@
 describe("cordovaFile directive", function () {
     var elm, scope,
-        modalMock;
+        modalMock, modalDeferred;
 
     beforeEach(module('angular-cordova-file'));
+    beforeEach(module('ui.bootstrap.modal'));
     beforeEach(inject(function($rootScope, $compile) {
         scope = $rootScope.$new();
         scope.onFiles = function ($files) {};
+    }));
+
+    beforeEach(inject(function($modal, $q) {
+        modalMock = $modal;
+        modalDeferred = $q.defer();
+
+        spyOn(modalMock, "open").andReturn({result: modalDeferred.promise});
     }));
 
     function compileDirective(tpl) {
@@ -20,15 +28,28 @@ describe("cordovaFile directive", function () {
     }
 
     describe("with a cordova environment", function () {
-        var modalDeferred;
+        var navigatorMock,
+            getPictureDeferred;
 
         beforeEach(inject(function($modal, $window, $q) {
-            modalMock = $modal;
-            modalDeferred = $q.defer();
+            $window.Camera = {
+                PictureSourceType: {
+                    CAMERA: 1,
+                    PHOTOLIBRARY: 2
+                },
+                DestinationType: {
+                    FILE_URI: 1
+                },
+                EncodingType: {
+                    PNG: 1
+                }
+            };
 
-            spyOn(modalMock, "open").andReturn({result: modalDeferred.promise});
+            getPictureDeferred = $q.defer();
 
-            $window.Camera = {};
+            navigatorMock = navigator;
+            navigatorMock.camera = {getPicture: function () {}};
+            spyOn(navigatorMock.camera, "getPicture").andReturn(getPictureDeferred.promise);
         }));
 
         it("should open modal", function () {
@@ -38,13 +59,18 @@ describe("cordovaFile directive", function () {
 
             expect(modalMock.open).toHaveBeenCalled();
         });
+
+        it("shouldn't open modal if dataSource attribute", function () {
+            compileDirective('<input type="file" cordova-file="onFiles($files)" data-source="camera" />');
+            elm.triggerHandler('click');
+
+            expect(modalMock.open).not.toHaveBeenCalled();
+            expect(navigatorMock.camera.getPicture).toHaveBeenCalled();
+        });
     });
 
     describe("with a web environment", function () {
         beforeEach(inject(function($modal, $window) {
-            modalMock = $modal;
-            spyOn(modalMock, "open");
-
             $window.Camera = undefined;
         }));
 
