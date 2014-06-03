@@ -70,11 +70,18 @@ angular.module('angular-cordova-file')
         return {
             link: function (scope, element, attributes) {
                 var fn = $parse(attributes.cordovaFile),
-                    options = {};
+                    options = {},
+                    source;
 
                 if (attributes.options) {
-                    scope.$watch('options', function (value) {
+                    scope.$watch(attributes.options, function (value) {
                         options = value || options;
+                    });
+                }
+
+                if (attributes.source) {
+                    scope.$watch(attributes.source, function (value) {
+                        source = value;
                     });
                 }
 
@@ -101,12 +108,12 @@ angular.module('angular-cordova-file')
                     if (typeof Camera != "undefined") {
                         event.preventDefault();
 
-                        if (attributes.source !== undefined) {
-                            if (!(attributes.source in sourcesMapping)) {
-                                throw new Error(attributes.source+' data source not found');
+                        if (source !== undefined) {
+                            if (!(source in sourcesMapping)) {
+                                throw new Error(source+' data source not found');
                             }
 
-                            requestPictureFromSource(sourcesMapping[attributes.source], options).then(function (files) {
+                            requestPictureFromSource(sourcesMapping[source], options).then(function (files) {
                                 $timeout(function() {
                                     fn(scope, {
                                         $files : files,

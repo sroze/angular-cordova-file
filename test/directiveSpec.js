@@ -61,12 +61,33 @@ describe("cordovaFile directive", function () {
         });
 
         it("shouldn't open modal if dataSource attribute", function () {
-            compileDirective('<input type="file" cordova-file="onFiles($files)" data-source="camera" />');
+            compileDirective('<input type="file" cordova-file="onFiles($files)" data-source="\'camera\'" />');
             elm.triggerHandler('click');
 
             expect(modalMock.open).not.toHaveBeenCalled();
             expect(navigatorMock.camera.getPicture).toHaveBeenCalled();
         });
+
+        it("shouldn't change dataSource with scope", inject(function ($window) {
+            scope.source = 'camera';
+
+            compileDirective('<input type="file" cordova-file="onFiles($files)" data-source="source" />');
+            elm.triggerHandler('click');
+
+            expect(navigatorMock.camera.getPicture).toHaveBeenCalled();
+            var mrCall = navigatorMock.camera.getPicture.mostRecentCall;
+            expect(mrCall.args[2].sourceType).toEqual($window.Camera.PictureSourceType.CAMERA);
+
+            scope.source = 'photoLibrary';
+            scope.$apply();
+
+            elm.triggerHandler('click');
+
+            expect(navigatorMock.camera.getPicture).toHaveBeenCalled();
+            mrCall = navigatorMock.camera.getPicture.mostRecentCall;
+            expect(mrCall.args[2].sourceType).toEqual($window.Camera.PictureSourceType.PHOTOLIBRARY);
+
+        }));
 
         it("must be possible to override camera options", function () {
             scope.options = {
@@ -74,7 +95,7 @@ describe("cordovaFile directive", function () {
                 foo: 'bar'
             };
 
-            compileDirective('<input type="file" cordova-file="onFiles($files)" data-source="camera" data-options="options" />');
+            compileDirective('<input type="file" cordova-file="onFiles($files)" data-source="\'camera\'" data-options="options" />');
             elm.triggerHandler('click');
 
             expect(navigatorMock.camera.getPicture).toHaveBeenCalledWith(jasmine.any(Function), jasmine.any(Function), jasmine.any(Object));
