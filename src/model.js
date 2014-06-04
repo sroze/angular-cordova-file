@@ -54,9 +54,9 @@ angular.module('angular-cordova-file')
                 if (typeof FileTransfer == "undefined") {
                     $upload.upload({
                         url: options.url,
-                        // method: POST or PUT,
+                        method: options.method,
                         headers: options.headers,
-                        // withCredentials: true,
+                        withCredentials: options.withCredentials,
                         data: options.data,
                         file: this.get('file'),
                         fileFormDataName: options.fileKey
