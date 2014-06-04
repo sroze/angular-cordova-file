@@ -1,6 +1,6 @@
 /**
  * Cordova files integration into AngularJS
- * @version v1.1.1
+ * @version v1.1.2
  * @link http://github.com/sroze/angular-cordova-file
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -70,9 +70,9 @@ angular.module('angular-cordova-file')
                 if (typeof FileTransfer == "undefined") {
                     $upload.upload({
                         url: options.url,
-                        // method: POST or PUT,
+                        method: options.method,
                         headers: options.headers,
-                        // withCredentials: true,
+                        withCredentials: options.withCredentials,
                         data: options.data,
                         file: this.get('file'),
                         fileFormDataName: options.fileKey
