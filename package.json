@@ -1,7 +1,7 @@
 {
     "name": "angular-cordova-file",
     "description": "Cordova files integration into AngularJS",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "homepage": "http://github.com/sroze/angular-cordova-file",
     "maintainers": [
         {
