@@ -105,7 +105,7 @@ angular.module('angular-cordova-file')
                 });
 
                 element.on('click', function (event) {
-                    //Needed to be able to upload again file
+                    // Needed to be able to upload again file
                     this.value = null;
                             
                     if (typeof Camera != "undefined") {
