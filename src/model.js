@@ -76,6 +76,8 @@ angular.module('angular-cordova-file')
                     uploadOptions.fileName = uri.substr(uri.lastIndexOf('/') + 1);
                     uploadOptions.mimeType = this.get('contentType');
                     uploadOptions.headers = options.headers;
+                    // Android Quirk to prevent problems uploading to a Nginx server.
+                    uploadOptions.chunkedMode = false;
 
                     uploadOptions.params = options.data;
 
